@@ -1,0 +1,348 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcquireMock - Оплата</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 440px;
+            width: 100%;
+            overflow: hidden;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 32px 28px;
+            color: white;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .merchant-info {
+            font-size: 14px;
+            opacity: 0.95;
+            margin-top: 4px;
+        }
+
+        .amount-section {
+            padding: 28px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .amount-label {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .amount {
+            font-size: 42px;
+            font-weight: 700;
+            color: #212529;
+            letter-spacing: -1px;
+        }
+
+        .order-ref {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .form-section {
+            padding: 32px 28px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: white;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #adb5bd;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .security-info {
+            text-align: center;
+            padding: 20px 28px 28px;
+            font-size: 12px;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .lock-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .error-message {
+            background: #fff5f5;
+            color: #c53030;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c53030;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .card-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.3;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 16px;
+            }
+
+            .amount {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">AcquireMock</div>
+            <div class="merchant-info">Оплата замовлення • Feane Restaurant</div>
+        </div>
+
+        <div class="amount-section">
+            <div class="amount-label">До сплати</div>
+            <div class="amount">{{ amount }} ₴</div>
+            <div class="order-ref">Замовлення #{{ reference }}</div>
+        </div>
+
+        <form id="paymentForm" class="form-section" method="POST" action="/pay/{{ payment_id }}">
+            <div class="error-message" id="errorMessage"></div>
+
+            <div class="form-group">
+                <label class="form-label" for="cardNumber">Номер картки</label>
+                <div class="input-wrapper">
+                    <input
+                        type="text"
+                        id="cardNumber"
+                        name="card_number"
+                        class="form-input"
+                        placeholder="0000 0000 0000 0000"
+                        maxlength="19"
+                        required
+                        autocomplete="cc-number"
+                    >
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="expiry">Термін дії</label>
+                    <input
+                        type="text"
+                        id="expiry"
+                        name="expiry"
+                        class="form-input"
+                        placeholder="MM/YY"
+                        maxlength="5"
+                        required
+                        autocomplete="cc-exp"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="cvv">CVV</label>
+                    <input
+                        type="text"
+                        id="cvv"
+                        name="cvv"
+                        class="form-input"
+                        placeholder="123"
+                        maxlength="3"
+                        required
+                        autocomplete="cc-csc"
+                    >
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Оплатити {{ amount }} ₴
+            </button>
+        </form>
+
+        <div class="security-info">
+            <svg class="lock-icon" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+            </svg>
+            Захищено 256-бітним шифруванням
+        </div>
+    </div>
+
+    <script>
+        const cardNumberInput = document.getElementById('cardNumber');
+        cardNumberInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+
+        const expiryInput = document.getElementById('expiry');
+        expiryInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        const cvvInput = document.getElementById('cvv');
+        cvvInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+
+        const form = document.getElementById('paymentForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Обробка...';
+            errorMessage.classList.remove('show');
+
+            setTimeout(() => {
+                const cardNumber = cardNumberInput.value.replace(/\s/g, '');
+
+                if (cardNumber === '4444444444444444') {
+                    form.submit();
+                } else {
+                    errorMessage.textContent = 'Недостатньо коштів на картці';
+                    errorMessage.classList.add('show');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Оплатити {{ amount }} ₴';
+                }
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
