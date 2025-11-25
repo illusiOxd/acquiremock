@@ -113,7 +113,12 @@
             font-size: 16px;
             transition: all 0.2s ease;
             background: white;
-            font-family: 'Courier New', monospace;
+            font-family: 'Courier New', monospace; /* Для цифр хорошо */
+        }
+
+        /* Для email вернем стандартный шрифт */
+        input[type="email"] {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         .form-input:focus {
@@ -199,14 +204,6 @@
             75% { transform: translateX(10px); }
         }
 
-        .card-icon {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            opacity: 0.3;
-        }
-
         .input-wrapper {
             position: relative;
         }
@@ -237,6 +234,20 @@
 
         <form id="paymentForm" class="form-section" method="POST" action="/pay/{{ payment_id }}">
             <div class="error-message" id="errorMessage"></div>
+
+            <!-- Добавлено поле Email -->
+            <div class="form-group">
+                <label class="form-label" for="email">Email для підтвердження</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    class="form-input"
+                    placeholder="your@email.com"
+                    required
+                    autocomplete="email"
+                >
+            </div>
 
             <div class="form-group">
                 <label class="form-label" for="cardNumber">Номер картки</label>

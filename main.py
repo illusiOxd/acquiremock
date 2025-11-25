@@ -3,13 +3,14 @@ import httpx
 import json
 
 from fastapi.responses import RedirectResponse
-from fastapi import FastAPI, HTTPException, Request, Form
+from fastapi import FastAPI, HTTPException, Request, Form, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.cors import CORSMiddleware
 from models.invoice import CreateInvoiceResponse, CreateInvoiceRequest
 from other.data import db_payments
 from datetime import datetime
-from other.miscFunctions import payment_check
+from other.miscFunctions import payment_check, generate_otp, validate_otp
+from services.smtp_service import send_otp_email
 
 app = FastAPI(
     title="AcquireMock",
@@ -38,6 +39,7 @@ async def read_root():
             "create_invoice": "POST /api/create-invoice",
             "checkout": "GET /checkout/{payment_id}",
             "process_payment": "POST /pay/{payment_id}",
+            "verify_otp": "POST /otp/verify/{payment_id}",
             "success": "GET /success/{payment_id}",
             "health": "GET /health"
         }
@@ -82,9 +84,11 @@ async def checkout(payment_id: str, request: Request):
 @app.post("/pay/{payment_id}")
 async def process_payment(
         payment_id: str,
+        background_tasks: BackgroundTasks,
         card_number: str = Form(...),
         expiry: str = Form(...),
-        cvv: str = Form(...)
+        cvv: str = Form(...),
+        email: str = Form(...)
 ):
     payment = payment_check(payment_id, db_payments)
 
@@ -94,34 +98,21 @@ async def process_payment(
     card_number_clean = card_number.replace(" ", "")
 
     if card_number_clean == "4444444444444444":
-        payment["status"] = "paid"
-        payment["paid_at"] = datetime.now().isoformat()
-        payment["card_mask"] = f"**** **** **** {card_number_clean[-4:]}"
+        otp_code = generate_otp()
 
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                webhook_data = {
-                    "payment_id": payment_id,
-                    "reference": payment["reference"],
-                    "amount": payment["amount"],
-                    "status": "success",
-                    "paid_at": payment["paid_at"]
-                }
-                webhook_url = payment.get("webhook_url")
-                if webhook_url:
-                    print(f"Відправляю Webhook на: {webhook_url}")
-                    try:
-                        await client.post(webhook_url, json=webhook_data)
-                    except Exception as e:
-                        print(f"Failed to send webhook request: {e}")
-                else:
-                    print("Webhook URL відсутній.")
+        user_email = email
 
-        except Exception as e:
-            print(f"Помилка при ініціалізації клієнта: {e}")
+        payment.update({
+            "otp_code": otp_code,
+            "otp_email": user_email,
+            "card_mask": f"**** **** **** {card_number_clean[-4:]}",
+            "status": "waiting_for_otp"
+        })
+
+        background_tasks.add_task(send_otp_email, user_email, otp_code)
 
         return RedirectResponse(
-            url=f"/success/{payment_id}",
+            url=f"/otp/{payment_id}",
             status_code=303
         )
     else:
@@ -129,6 +120,71 @@ async def process_payment(
             status_code=400,
             detail="Insufficient funds"
         )
+
+
+@app.get("/otp/{payment_id}")
+async def otp_page(payment_id: str, request: Request):
+    payment = payment_check(payment_id, db_payments)
+
+    if not isinstance(payment, dict):
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    if payment.get("status") != "waiting_for_otp":
+        raise HTTPException(status_code=400, detail="Invalid payment state")
+
+    user_email = payment.get("otp_email", "unknown")
+    masked_email = user_email
+
+    return templates.TemplateResponse(
+        "otp-page.html",
+        {
+            "request": request,
+            "payment_id": payment_id,
+            "email": masked_email
+        }
+    )
+
+
+@app.post("/otp/verify/{payment_id}")
+async def verify_otp(payment_id: str, otp_code: str = Form(...)):
+    payment = payment_check(payment_id, db_payments)
+
+    if not isinstance(payment, dict):
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    if not validate_otp(payment, otp_code):
+        raise HTTPException(status_code=400, detail="Invalid OTP code")
+
+    payment["status"] = "paid"
+    payment["paid_at"] = datetime.now().isoformat()
+    payment["otp_code"] = None
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            webhook_data = {
+                "payment_id": payment_id,
+                "reference": payment["reference"],
+                "amount": payment["amount"],
+                "status": "success",
+                "paid_at": payment["paid_at"]
+            }
+            webhook_url = payment.get("webhook_url")
+            if webhook_url:
+                print(f"Sending Webhook to: {webhook_url}")
+                try:
+                    await client.post(webhook_url, json=webhook_data)
+                except Exception as e:
+                    print(f"Failed to send webhook request: {e}")
+            else:
+                print("Webhook URL missing.")
+
+    except Exception as e:
+        print(f"Error initializing client: {e}")
+
+    return RedirectResponse(
+        url=f"/success/{payment_id}",
+        status_code=303
+    )
 
 
 @app.get("/success/{payment_id}")

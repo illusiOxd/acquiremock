@@ -1,0 +1,104 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcquireMock - Перевірка безпеки</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Тот же градиент */
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+
+        .container {
+            background: white; border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px; width: 100%;
+            overflow: hidden; text-align: center;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon-header {
+            background: #f8f9fa; padding: 32px 0; border-bottom: 1px solid #e9ecef;
+        }
+
+        .mail-icon {
+            width: 64px; height: 64px;
+            background: #e0e7ff; color: #667eea;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto;
+        }
+
+        .content { padding: 32px 28px; }
+
+        .title { font-size: 22px; font-weight: 700; color: #2d3748; margin-bottom: 8px; }
+
+        .description {
+            font-size: 15px; color: #718096; line-height: 1.5; margin-bottom: 24px;
+        }
+
+        .email-highlight { font-weight: 600; color: #4a5568; }
+
+        .otp-input {
+            width: 100%; padding: 14px;
+            font-size: 24px; font-family: monospace; letter-spacing: 12px; text-align: center;
+            border: 2px solid #e2e8f0; border-radius: 12px;
+            margin-bottom: 24px; outline: none; transition: all 0.2s;
+        }
+
+        .otp-input:focus {
+            border-color: #667eea; box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .verify-btn {
+            width: 100%; padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .verify-btn:hover { transform: translateY(-2px); }
+
+        .resend-link {
+            display: block; margin-top: 20px;
+            font-size: 14px; color: #718096; text-decoration: none;
+        }
+        .resend-link:hover { color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon-header">
+            <div class="mail-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <form class="content" method="POST" action="/otp/verify/{{ payment_id }}">
+            <h2 class="title">Перевірка Email</h2>
+            <p class="description">
+                Ми надіслали код підтвердження на вашу пошту <br>
+                <span class="email-highlight">{{ email }}</span>
+            </p>
+
+            <input type="text" name="otp_code" class="otp-input" placeholder="0000" maxlength="4" autofocus required autocomplete="one-time-code">
+
+            <button type="submit" class="verify-btn">Підтвердити платіж</button>
+
+            <a href="#" class="resend-link">Надіслати код повторно</a>
+        </form>
+    </div>
+</body>
+</html>
