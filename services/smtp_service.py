@@ -1,10 +1,10 @@
-﻿import smtplib
-import os
+﻿import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
+import aiosmtplib
 
 load_dotenv()
 
@@ -14,7 +14,7 @@ SMTP_USER = os.getenv('SMTP_USER')
 SMTP_PASS = os.getenv('SMTP_PASS')
 
 
-def send_email(to_email, subject, html_content, text_content):
+async def send_email(to_email, subject, html_content, text_content):
     msg = MIMEMultipart("alternative")
     msg['Subject'] = subject
     msg['From'] = SMTP_USER
@@ -27,16 +27,20 @@ def send_email(to_email, subject, html_content, text_content):
     msg.attach(part2)
 
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(SMTP_USER, [to_email], msg.as_string())
-        print(f"Email sent to {to_email}")
+        await aiosmtplib.send(
+            message=msg,
+            hostname=SMTP_HOST,
+            port=int(SMTP_PORT),
+            username=SMTP_USER,
+            password=SMTP_PASS,
+            use_tls=True
+        )
+        print(f"Email sent to {to_email} (Async)")
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        print(f"Failed to send email (Async): {e}")
 
 
-def send_otp_email(to_email, otp_code):
+async def send_otp_email(to_email, otp_code):
     subject = "AcquireMock: Ваш код підтвердження"
     template_path = Path("templates/misc/email-letter.html")
 
@@ -49,10 +53,10 @@ def send_otp_email(to_email, otp_code):
     html_body = html_content.replace("{{ code }}", str(otp_code))
     text_body = f"Ваш код підтвердження: {otp_code}"
 
-    send_email(to_email, subject, html_body, text_body)
+    await send_email(to_email, subject, html_body, text_body)
 
 
-def send_receipt_email(to_email, payment_data):
+async def send_receipt_email(to_email, payment_data):
     subject = f"Чек про оплату замовлення #{payment_data.get('reference')}"
     template_path = Path("templates/misc/receipt.html")
 
@@ -75,8 +79,9 @@ def send_receipt_email(to_email, payment_data):
 
     text_body = f"Оплата успішна. Сума: {payment_data.get('amount')} грн. Замовлення: {payment_data.get('reference')}"
 
-    send_email(to_email, subject, html_content, text_body)
+    await send_email(to_email, subject, html_content, text_body)
 
 
 if __name__ == "__main__":
-    send_otp_email("test@example.com", "1234")
+    import asyncio
+    asyncio.run(send_otp_email("test@example.com", "1234"))

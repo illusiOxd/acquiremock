@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="top-controls">
+        <div class="lang-switcher">
+            <button class="lang-btn" onclick="changeLanguage('uk')">UK</button>
+            <button class="lang-btn" onclick="changeLanguage('en')">EN</button>
+            <button class="lang-btn" onclick="changeLanguage('de')">DE</button>
+            <button class="lang-btn" onclick="changeLanguage('ru')">RU</button>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+            <svg class="sun-icon" style="display: none;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <svg class="moon-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+    </div>
+
+    <div class="container" style="text-align:center;">
+        <div style="width:64px; height:64px; border:3px solid var(--accent-secondary); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 32px auto; color:var(--accent-secondary);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+
+        <h1 class="title" style="margin-bottom:12px; font-size: 28px;" data-i18n="success_title">Оплата успішна!</h1>
+        <p style="font-size:14px; color:var(--text-secondary); margin-bottom:40px;" data-i18n="success_msg">Дякуємо за покупку.</p>
+
+        <div style="text-align:left; border-top:1px dashed rgba(0,0,0,0.1); border-bottom:1px dashed rgba(0,0,0,0.1); padding:24px 0; margin-bottom:32px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                <span class="form-label" style="margin:0;" data-i18n="order_num">Референс</span>
+                <span style="font-family:'Playfair Display', serif; font-weight:600; color:var(--text-main);">#{{ reference }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                <span class="form-label" style="margin:0;" data-i18n="sum_label">Сума</span>
+                <span style="font-family:'Playfair Display', serif; color:var(--accent-primary); font-weight:700;">{{ amount }} ₴</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span class="form-label" style="margin:0;" data-i18n="status_label">Статус</span>
+                <span style="color:var(--accent-secondary); font-weight:600;" data-i18n="status_paid">Оплачено</span>
+            </div>
+        </div>
+
+        <a href="{{ redirect_url }}" class="submit-btn" style="background:var(--text-main); color:var(--card-bg); margin-top:0;" data-i18n="return_btn">Повернутися до магазину</a>
+
+        <p style="margin-top:24px; font-size:11px; opacity:0.5; color:var(--text-secondary);" data-i18n="receipt_sent">Чек надіслано на пошту</p>
+    </div>
+
+    <div class="logo-container" style="text-align:center; margin-top:32px; opacity:0.6;">
+        <img src="/static/images/AcquireMock.svg" alt="AcquireMock" style="height:20px; width:auto;">
+    </div>
+
+    <script src="/static/js/i18n.js"></script>
+</body>
+</html>

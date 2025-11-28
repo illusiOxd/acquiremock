@@ -7,14 +7,17 @@ from typing import List, Optional, Dict
 from fastapi import FastAPI, HTTPException, Request, Form, BackgroundTasks, Depends, Query, Cookie, Body
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydantic import BaseModel
+import aiosmtplib
 
 from models.invoice import CreateInvoiceResponse, CreateInvoiceRequest
 from other.data import db_payments
-from other.miscFunctions import payment_check, generate_otp, validate_otp
+from other.miscFunctions import payment_check, validate_otp
+from security.crypto import generate_secure_otp, generate_csrf_token
 from services.smtp_service import send_otp_email, send_receipt_email
 from database.chore.session import get_db, engine
 from database.models.main_models import SuccessFulOperation, SavedCard
@@ -22,6 +25,9 @@ from database.functional.main_functions import send_successful_operation, init_d
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from security.middleware import SecurityHeadersMiddleware
+from security.sanitizer import clean_input
+from security.crypto import generate_secure_otp
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,16 +56,10 @@ async def on_startup():
     logger.info("Database initialized successfully.")
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(SecurityHeadersMiddleware)
 
-templates = Jinja2Templates(directory="templates")
-
+templates = Jinja2Templates(directory="templates/pages")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -148,7 +148,7 @@ async def finalize_successful_payment(payment_id: str, payment: dict, db: AsyncS
 @app.post("/api/auth/send-code")
 async def auth_send_code(req: EmailRequest, background_tasks: BackgroundTasks):
     logger.info(f"Auth code requested for {req.email}")
-    code = generate_otp()
+    code = generate_secure_otp()
     login_store[req.email] = code
     background_tasks.add_task(send_otp_email, req.email, code)
     return {"status": "sent", "message": "Code sent"}
@@ -196,11 +196,14 @@ async def read_root(request: Request):
 
 @app.post("/api/create-invoice", response_model=CreateInvoiceResponse)
 async def create_invoice(invoice: CreateInvoiceRequest):
-    logger.info(f"Creating invoice for amount {invoice.amount}, ref {invoice.reference}")
+    clean_reference = clean_input(invoice.reference)
+
+    logger.info(f"Creating invoice for amount {invoice.amount}, ref {clean_reference}")
     payment_id = str(uuid.uuid4())
+
     db_payments[payment_id] = {
         "amount": invoice.amount,
-        "reference": invoice.reference,
+        "reference": clean_reference,
         "webhook_url": invoice.webhook_url,
         "redirect_url": invoice.redirect_url,
         "status": "pending",
@@ -221,18 +224,24 @@ async def checkout(payment_id: str, request: Request, db: AsyncSession = Depends
     user_email = request.cookies.get("user_email")
     recent_operations, saved_cards = [], []
 
+    csrf_token = generate_csrf_token()
+
     if user_email:
         recent_operations, saved_cards = await get_user_data(user_email, db)
 
-    return templates.TemplateResponse("checkout.html", {
+    response = templates.TemplateResponse("checkout.html", {
         "request": request,
         "payment_id": payment_id,
         "amount": payment["amount"],
         "reference": payment["reference"],
         "recent_operations": recent_operations,
         "saved_cards": saved_cards,
-        "prefill_email": user_email
+        "prefill_email": user_email,
+        "csrf_token": csrf_token
     })
+
+    response.set_cookie(key="csrf_token", value=csrf_token, httponly=True)
+    return response
 
 
 @app.post("/pay/{payment_id}")
@@ -245,8 +254,14 @@ async def process_payment(
         cvv: str = Form(...),
         email: str = Form(...),
         save_card: bool = Form(False),
+        csrf_token: str = Form(...),
         db: AsyncSession = Depends(get_db)
 ):
+    cookie_token = request.cookies.get("csrf_token")
+    if not cookie_token or cookie_token != csrf_token:
+        logger.warning(f"CSRF Attack attempt on payment {payment_id}")
+        raise HTTPException(status_code=403, detail="CSRF Token Mismatch")
+
     logger.info(f"Processing payment {payment_id} for email {email}")
     payment = payment_check(payment_id, db_payments)
     if not isinstance(payment, dict):
@@ -272,7 +287,7 @@ async def process_payment(
             await finalize_successful_payment(payment_id, payment, db, background_tasks)
             return RedirectResponse(url=f"/success/{payment_id}", status_code=303)
 
-        otp_code = generate_otp()
+        otp_code = generate_secure_otp()
         payment["otp_code"] = otp_code
         payment["status"] = "waiting_for_otp"
 

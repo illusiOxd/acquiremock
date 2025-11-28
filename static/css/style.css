@@ -1,0 +1,260 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+:root {
+    --bg-color: #F2F3F5;
+    --card-bg: #FFFFFF;
+    --text-main: #1A1A1A;
+    --text-secondary: #858585;
+    --accent-primary: #C1666B;
+    --accent-secondary: #D4B483;
+
+    --input-bg: #F7F7F9;
+    --input-border: transparent;
+    --input-focus-border: #C1666B;
+
+    --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.08);
+    --shadow-hover: 0 16px 50px rgba(193, 102, 107, 0.2);
+
+    --btn-gradient: linear-gradient(135deg, #C1666B 0%, #A54E53 100%);
+    --radius-card: 32px;
+    --radius-elem: 20px;
+}
+
+body.dark-mode {
+    /* --- Dark Theme (Neo-Bank Style) --- */
+    --bg-color: #121212;
+    --card-bg: #1E1E1E;
+    --text-main: #FFFFFF;
+    --text-secondary: #A0A0A0;
+    --accent-primary: #D67C82;
+    --accent-secondary: #E6C695;
+
+    --input-bg: #2C2C2C;
+    --input-border: transparent;
+    --input-focus-border: #D67C82;
+
+    --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.5);
+    --shadow-hover: 0 20px 60px rgba(214, 124, 130, 0.15);
+
+    --btn-gradient: linear-gradient(135deg, #D67C82 0%, #B85F65 100%);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+/* --- CORPORATE CARD --- */
+.container, .modal-card, .test-container {
+    background: var(--card-bg);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft);
+    width: 100%;
+    max-width: 420px; /* Стандартная ширина */
+    padding: 40px 32px;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.03); /* Микро-граница */
+}
+
+.dark-mode .container, .dark-mode .modal-card {
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* --- TYPOGRAPHY --- */
+h1, h2, .title, .amount {
+    font-family: 'Playfair Display', serif;
+    color: var(--text-main);
+}
+
+.amount-section {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px dashed rgba(0,0,0,0.1);
+}
+
+.dark-mode .amount-section {
+    border-bottom-color: rgba(255,255,255,0.1);
+}
+
+.amount {
+    font-size: 48px;
+    font-weight: 700;
+    margin: 8px 0;
+    letter-spacing: -1px;
+}
+
+.ref-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-secondary);
+    letter-spacing: 0.5px;
+}
+
+/* --- INPUTS (Standardized Height 56px) --- */
+.form-group { margin-bottom: 24px; }
+
+.form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    padding-left: 4px;
+}
+
+.form-input {
+    width: 100%;
+    height: 56px; /* Фиксированная высота */
+    padding: 0 20px;
+    background: var(--input-bg);
+    border: 2px solid var(--input-border);
+    border-radius: var(--radius-elem);
+    font-size: 16px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    color: var(--text-main);
+    outline: none;
+}
+
+.form-input:focus {
+    background: var(--card-bg);
+    border-color: var(--input-focus-border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* --- BUTTONS (Standardized Height 56px) --- */
+.submit-btn, .btn, .redirect-btn {
+    width: 100%;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--btn-gradient);
+    color: #FFFFFF;
+    border: none;
+    border-radius: var(--radius-elem);
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -4px rgba(193, 102, 107, 0.4);
+    text-decoration: none;
+    margin-top: 24px;
+}
+
+.dark-mode .submit-btn {
+    box-shadow: 0 8px 20px -4px rgba(214, 124, 130, 0.2);
+}
+
+.submit-btn:hover, .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+/* --- TOP CONTROLS (Floating) --- */
+.top-controls {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    gap: 12px;
+    z-index: 100;
+}
+
+.lang-switcher {
+    background: var(--card-bg);
+    padding: 4px;
+    border-radius: 50px;
+    display: flex;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.lang-btn {
+    background: none;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.lang-btn.active {
+    background: var(--text-main);
+    color: var(--card-bg); /* Инверсия для активного */
+}
+
+.theme-toggle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-main);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.theme-toggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+
+/* --- UTILS --- */
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent-primary);
+}
+
+/* Fixes */
+.step-container { display: none !important; }
+.step-container.active { display: block !important; animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Logo Adaptation */
+.logo-container img {
+    transition: filter 0.3s;
+}
+.dark-mode .logo-container img {
+    filter: invert(1);
+}

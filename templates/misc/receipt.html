@@ -1,31 +1,143 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <title>Receipt</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f7; padding: 20px; margin: 0; }
-        .receipt-container {
-            max-width: 500px; margin: 0 auto; background: white;
-            border-radius: 12px; overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #F2F3F5;
+            padding: 40px 20px;
+            margin: 0;
         }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }
-        .amount { font-size: 36px; font-weight: bold; margin: 10px 0; }
-        .status { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; text-transform: uppercase; }
-        .content { padding: 30px; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; }
-        .row:last-child { border-bottom: none; margin-bottom: 0; }
-        .label { color: #718096; font-size: 14px; }
-        .value { color: #2d3748; font-weight: 600; font-size: 14px; }
-        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #a0aec0; font-size: 12px; }
+
+        .receipt-container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
+
+        /* Декоративная полоска сверху */
+        .top-accent {
+            height: 8px;
+            background: linear-gradient(135deg, #C1666B 0%, #A54E53 100%);
+            width: 100%;
+        }
+
+        .header {
+            padding: 40px 40px 20px;
+            text-align: center;
+        }
+
+        .brand {
+            font-size: 14px;
+            font-weight: 700;
+            color: #858585;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 24px;
+        }
+
+        .amount-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #C1666B;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .amount {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            font-weight: 700;
+            margin: 0;
+            color: #1A1A1A;
+            line-height: 1;
+        }
+
+        .status-badge {
+            display: inline-block;
+            margin-top: 24px;
+            padding: 8px 16px;
+            background: #F7F7F9;
+            color: #1A1A1A;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .divider {
+            border-bottom: 1px dashed #E0E0E0;
+            margin: 20px 40px;
+        }
+
+        .content {
+            padding: 10px 40px 40px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            align-items: baseline;
+        }
+
+        .row:last-child { margin-bottom: 0; }
+
+        .label {
+            color: #858585;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .value {
+            color: #1A1A1A;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .value.ref {
+            font-family: 'Playfair Display', serif;
+            color: #D4B483; /* Gold Accent */
+            font-size: 16px;
+        }
+
+        .footer {
+            background: #FAFAFA;
+            padding: 24px;
+            text-align: center;
+            color: #A0A0A0;
+            font-size: 11px;
+            border-top: 1px solid #F0F0F0;
+        }
     </style>
 </head>
 <body>
     <div class="receipt-container">
+        <div class="top-accent"></div>
+
         <div class="header">
-            <div style="font-size: 18px; opacity: 0.9;">AcquireMock</div>
+            <div class="brand">AcquireMock</div>
+            <span class="amount-label">Сплачено</span>
             <div class="amount">{{ amount }} ₴</div>
-            <span class="status">Оплачено</span>
+            <div class="status-badge">Успішно</div>
         </div>
+
+        <div class="divider"></div>
+
         <div class="content">
             <div class="row">
                 <span class="label">Дата</span>
@@ -33,7 +145,7 @@
             </div>
             <div class="row">
                 <span class="label">Референс</span>
-                <span class="value">{{ reference }}</span>
+                <span class="value ref">#{{ reference }}</span>
             </div>
             <div class="row">
                 <span class="label">Картка</span>
@@ -41,12 +153,13 @@
             </div>
             <div class="row">
                 <span class="label">ID Платежу</span>
-                <span class="value">{{ payment_id }}</span>
+                <span class="value" style="font-family: monospace; font-size: 12px;">{{ payment_id }}</span>
             </div>
         </div>
+
         <div class="footer">
             Дякуємо за оплату!<br>
-            Feane Restaurant Payment Gateway
+            Збережіть цей чек для звітності.
         </div>
     </div>
 </body>

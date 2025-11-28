@@ -1,0 +1,257 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcquireMock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- Shared Top Controls -->
+    <div class="top-controls">
+        <div class="lang-switcher">
+            <button class="lang-btn" onclick="changeLanguage('uk')">UK</button>
+            <button class="lang-btn" onclick="changeLanguage('en')">EN</button>
+            <button class="lang-btn" onclick="changeLanguage('de')">DE</button>
+            <button class="lang-btn" onclick="changeLanguage('ru')">RU</button>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+            <svg class="sun-icon" style="display: none;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <svg class="moon-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="emailModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99;display:none;justify-content:center;align-items:center;">
+        <div class="modal-card">
+            <div id="step1" class="step-container active">
+                <h2 class="title" data-i18n="enter_email" style="font-size:24px; margin-bottom:12px;">Вхід</h2>
+                <p style="color:var(--text-secondary); margin-bottom:32px; font-size:14px;" data-i18n="enter_email_desc">Введіть ваш Email</p>
+                <div class="form-group">
+                    <input type="email" id="modalEmailInput" class="form-input" placeholder="name@example.com">
+                </div>
+                <button class="submit-btn" onclick="sendAuthCode()" data-i18n="get_code">Отримати код</button>
+            </div>
+
+            <div id="step2" class="step-container">
+                <h2 class="title" data-i18n="verify_title" style="font-size:24px; margin-bottom:12px;">Підтвердження</h2>
+                <p style="color:var(--text-secondary); margin-bottom:32px; font-size:14px;"><span data-i18n="verify_desc">Код на</span> <span id="displayEmail" style="color:var(--accent-primary); font-weight:600;"></span></p>
+                <div class="form-group">
+                    <input type="text" id="modalCodeInput" class="form-input" placeholder="0000" maxlength="4" style="text-align:center; letter-spacing:8px; font-size:24px;">
+                </div>
+                <button class="submit-btn" onclick="verifyAuthCode()" data-i18n="verify_btn">Увійти</button>
+                <div style="margin-top:24px; font-size:13px; color:var(--text-secondary); cursor:pointer; text-decoration:underline; text-align:center;" onclick="showStep(1)" data-i18n="change_email">Змінити Email</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Payment Container -->
+    <div class="container" id="mainContainer">
+        <div class="amount-section">
+            <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--accent-primary); font-weight:700;" data-i18n="to_pay">До сплати</div>
+            <div class="amount">{{ amount }} ₴</div>
+            <div class="ref-text">#{{ reference }}</div>
+            <div id="currentUserDisplay" style="margin-top:16px; font-size:12px; color:var(--text-secondary); cursor:pointer; text-decoration:underline;" onclick="resetUser()" data-i18n="change_acc">
+                Змінити акаунт
+            </div>
+        </div>
+
+        <form id="paymentForm" method="POST" action="/pay/{{ payment_id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="email" id="hiddenEmail">
+
+            <div id="savedCardsSection" style="display: none; margin-bottom:24px;">
+                <label class="form-label" data-i18n="your_cards">Ваші карти</label>
+                <div class="saved-cards-wrapper" id="savedCardsList"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" data-i18n="card_label">Номер картки</label>
+                <input type="text" id="cardNumber" name="card_number" class="form-input" placeholder="0000 0000 0000 0000" maxlength="19" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="expiry_label">Термін</label>
+                    <input type="text" id="expiry" name="expiry" class="form-input" placeholder="MM/YY" maxlength="5" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="cvv_label">CVV</label>
+                    <input type="text" id="cvv" name="cvv" class="form-input" placeholder="123" maxlength="3" required>
+                </div>
+            </div>
+
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="saveCard" name="save_card" value="true">
+                <span data-i18n="save_card">Зберегти карту</span>
+            </label>
+
+            <button type="submit" class="submit-btn" id="payBtn" data-i18n="pay_btn" data-amount="{{ amount }}">Оплатити {{ amount }} ₴</button>
+        </form>
+    </div>
+
+    <div class="logo-container" style="text-align:center; margin-top:32px; opacity:0.6;">
+        <img src="/static/images/AcquireMock.svg" alt="AcquireMock" style="height:20px; width:auto;">
+    </div>
+
+    <!-- Transaction History -->
+    <div class="container" id="historyContainer" style="margin-top:24px; display:none; background:transparent; border:none; box-shadow:none; padding:0;">
+        <div style="color:var(--text-main); font-family:'Playfair Display', serif; font-size:20px; margin-bottom:16px; text-align:center;" data-i18n="history_title">Історія транзакцій</div>
+        <div id="historyList" style="background:var(--card-bg); padding:24px; border-radius:24px; box-shadow:var(--shadow-soft);"></div>
+    </div>
+
+    <script src="/static/js/i18n.js"></script>
+    <script>
+        // Existing Logic Only
+        const prefillEmail = "{{ prefill_email if prefill_email else '' }}";
+        let currentAuthEmail = "";
+
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days*24*60*60*1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i=0;i < ca.length;i++) {
+                let c = ca[i];
+                while (c.charAt(0)==' ') c = c.substring(1,c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+            }
+            return null;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (prefillEmail) {
+                initializeUser(prefillEmail);
+            } else {
+                const cookieEmail = getCookie('user_email');
+                if (cookieEmail) {
+                    initializeUser(cookieEmail);
+                } else {
+                    document.getElementById('emailModal').style.display = 'flex';
+                }
+            }
+        });
+
+        function showStep(step) {
+            document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+        }
+
+        async function sendAuthCode() {
+            const email = document.getElementById('modalEmailInput').value;
+            if(!email || !email.includes('@')) {
+                alert('Введіть коректний Email');
+                return;
+            }
+            const btn = document.querySelector('#step1 .submit-btn');
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/auth/send-code', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: email})
+                });
+                if(res.ok) {
+                    currentAuthEmail = email;
+                    document.getElementById('displayEmail').innerText = email;
+                    showStep(2);
+                } else alert('Error sending code');
+            } catch(e) { alert('Network Error'); }
+            finally { btn.disabled = false; }
+        }
+
+        async function verifyAuthCode() {
+            const code = document.getElementById('modalCodeInput').value;
+            if(code.length < 4) return;
+            const btn = document.querySelector('#step2 .submit-btn');
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/auth/verify-code', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: currentAuthEmail, code: code})
+                });
+                if(res.ok) {
+                    setCookie('user_email', currentAuthEmail, 30);
+                    initializeUser(currentAuthEmail);
+                } else { alert('Invalid Code'); btn.disabled = false; }
+            } catch(e) { alert('Network Error'); btn.disabled = false; }
+        }
+
+        function initializeUser(email) {
+            document.getElementById('emailModal').style.display = 'none';
+            document.getElementById('mainContainer').classList.add('visible');
+            document.getElementById('hiddenEmail').value = email;
+            document.getElementById('currentUserDisplay').innerText = email + " (Змінити)";
+            fetchUserData(email);
+        }
+
+        function resetUser() {
+            setCookie('user_email', '', -1);
+            location.reload();
+        }
+
+        async function fetchUserData(email) {
+            try {
+                const response = await fetch(`/api/user-info?email=${email}`);
+                const data = await response.json();
+                const cardsDiv = document.getElementById('savedCardsList');
+                cardsDiv.innerHTML = '';
+                if (data.cards && data.cards.length > 0) {
+                    document.getElementById('savedCardsSection').style.display = 'block';
+                    data.cards.forEach(card => {
+                        const chip = document.createElement('div');
+                        chip.className = 'saved-card-chip';
+                        chip.innerText = card.mask;
+                        chip.onclick = () => fillCard(card, chip);
+                        cardsDiv.appendChild(chip);
+                    });
+                }
+                const histDiv = document.getElementById('historyList');
+                histDiv.innerHTML = '';
+                if (data.operations && data.operations.length > 0) {
+                    document.getElementById('historyContainer').style.display = 'block';
+                    data.operations.forEach(op => {
+                        histDiv.innerHTML += `
+                            <div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
+                                <div>
+                                    <div style="font-weight:600; color:var(--text-main)">${op.reference}</div>
+                                    <div style="font-size:11px; color:var(--text-secondary)">${op.date} • ${op.card_mask}</div>
+                                </div>
+                                <div style="color:var(--accent-primary); font-weight:600;">+${op.amount} ₴</div>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function fillCard(card, element) {
+            document.querySelectorAll('.saved-card-chip').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('cardNumber').value = card.number;
+            document.getElementById('expiry').value = card.expiry;
+            document.getElementById('cvv').value = card.cvv;
+        }
+
+        document.getElementById('cardNumber').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            e.target.value = value.match(/.{1,4}/g)?.join(' ') || value;
+        });
+        document.getElementById('expiry').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            e.target.value = value;
+        });
+    </script>
+</body>
+</html>

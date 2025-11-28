@@ -1,0 +1,8 @@
+<svg width="125" height="24" viewBox="0 0 125 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Иконка Карты (Черная, минимализм) -->
+    <rect x="0" y="4" width="28" height="18" rx="3" fill="#1A1A1A"/>
+    <rect x="0" y="9" width="28" height="3" fill="#EAE6E3"/>
+
+    <!-- Текст (Шрифт Montserrat/Sans, как на макете) -->
+    <text x="38" y="18" font-family="sans-serif" font-size="14" letter-spacing="0.5" fill="#1A1A1A">AcquireMock</text>
+</svg>
