@@ -17,7 +17,7 @@ import aiosmtplib
 from models.invoice import CreateInvoiceResponse, CreateInvoiceRequest
 from other.data import db_payments
 from other.miscFunctions import payment_check, validate_otp
-from security.crypto import generate_secure_otp, generate_csrf_token
+from security.crypto import generate_secure_otp, generate_csrf_token, hash_sensitive_data, verify_sensitive_data
 from services.smtp_service import send_otp_email, send_receipt_email
 from database.chore.session import get_db, engine
 from database.models.main_models import SuccessFulOperation, SavedCard
@@ -27,7 +27,6 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from security.middleware import SecurityHeadersMiddleware
 from security.sanitizer import clean_input
-from security.crypto import generate_secure_otp
 
 logging.basicConfig(
     level=logging.INFO,
@@ -65,27 +64,31 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
 @app.get("/", response_class=HTMLResponse)
 @limiter.limit("10/minute")
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 @app.get("/test", response_class=HTMLResponse)
 async def test_page(request: Request):
     return templates.TemplateResponse("test.html", {"request": request})
+
 
 @app.get("/merchant/login", response_class=HTMLResponse)
 async def merchant_login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+
 @app.get("/merchant/dashboard", response_class=HTMLResponse)
 async def merchant_dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc: HTTPException):
     return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
-
 
 
 async def send_webhook(payment_id: str, payment: dict):
@@ -150,9 +153,9 @@ async def finalize_successful_payment(payment_id: str, payment: dict, db: AsyncS
             if not existing.scalars().first():
                 saved_card = SavedCard(
                     email=payment.get("otp_email"),
-                    card_number=temp_data["number"],
+                    card_hash=hash_sensitive_data(temp_data["number"]),
+                    cvv_hash=hash_sensitive_data(temp_data["cvv"]),
                     expiry=temp_data["expiry"],
-                    cvv=temp_data["cvv"],
                     card_mask=payment.get("card_mask")
                 )
                 db.add(saved_card)
@@ -205,7 +208,7 @@ async def get_user_info_api(email: str, db: AsyncSession = Depends(get_db)):
             for op in operations
         ],
         "cards": [
-            {"id": c.id, "mask": c.card_mask, "number": c.card_number, "expiry": c.expiry, "cvv": c.cvv}
+            {"id": c.id, "mask": c.card_mask, "expiry": c.expiry}
             for c in cards
         ]
     }
@@ -266,9 +269,10 @@ async def process_payment(
         request: Request,
         payment_id: str,
         background_tasks: BackgroundTasks,
-        card_number: str = Form(...),
-        expiry: str = Form(...),
-        cvv: str = Form(...),
+        card_number: Optional[str] = Form(None),
+        expiry: Optional[str] = Form(None),
+        cvv: Optional[str] = Form(None),
+        saved_card_id: Optional[str] = Form(None),
         email: str = Form(...),
         save_card: bool = Form(False),
         csrf_token: str = Form(...),
@@ -284,20 +288,43 @@ async def process_payment(
     if not isinstance(payment, dict):
         raise HTTPException(404, "Payment error")
 
-    card_number_clean = card_number.replace(" ", "")
+    is_valid_card = False
+    card_mask_display = ""
 
-    if card_number_clean == "4444444444444444":
-        payment.update({
-            "otp_email": email,
-            "card_mask": f"**** {card_number_clean[-4:]}",
-            "temp_card_data": {
-                "number": card_number,
-                "expiry": expiry,
-                "cvv": cvv,
-                "save": save_card
-            }
-        })
+    if saved_card_id and saved_card_id.strip():
+        card_id_int = int(saved_card_id)
+        card_query = await db.execute(select(SavedCard).where(SavedCard.id == card_id_int))
+        saved_card_obj = card_query.scalars().first()
 
+        if not saved_card_obj:
+            raise HTTPException(404, "Saved card not found")
+
+        if verify_sensitive_data("4444444444444444", saved_card_obj.card_hash):
+            is_valid_card = True
+            card_mask_display = saved_card_obj.card_mask
+            payment.update({
+                "otp_email": email,
+                "card_mask": saved_card_obj.card_mask,
+                "temp_card_data": {"save": False}
+            })
+
+    elif card_number:
+        card_number_clean = card_number.replace(" ", "")
+        if card_number_clean == "4444444444444444":
+            is_valid_card = True
+            card_mask_display = f"**** {card_number_clean[-4:]}"
+            payment.update({
+                "otp_email": email,
+                "card_mask": card_mask_display,
+                "temp_card_data": {
+                    "number": card_number_clean,
+                    "expiry": expiry,
+                    "cvv": cvv,
+                    "save": save_card
+                }
+            })
+
+    if is_valid_card:
         cookie_email = request.cookies.get("user_email")
         if cookie_email and cookie_email == email:
             logger.info(f"Cookie matched for {email}, skipping OTP")
@@ -312,9 +339,8 @@ async def process_payment(
         logger.info(f"OTP sent to {email}")
         return RedirectResponse(url=f"/otp/{payment_id}", status_code=303)
     else:
-        logger.warning(f"Insufficient funds for payment {payment_id}")
+        logger.warning(f"Insufficient funds or invalid card for payment {payment_id}")
         raise HTTPException(400, "Insufficient funds")
-
 
 @app.get("/otp/{payment_id}")
 async def otp_page(payment_id: str, request: Request):

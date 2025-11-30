@@ -19,8 +19,8 @@ class SavedCard(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True)
-    card_number: str
+    card_hash: str
+    cvv_hash: str
     expiry: str
-    cvv: str
     card_mask: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
