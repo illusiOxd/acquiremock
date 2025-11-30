@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AcquireMock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { justify-content: flex-start; padding: 0; background-color: var(--bg-color); }
+
+        .sidebar {
+            width: 280px; height: 100vh; position: fixed; left: 0; top: 0;
+            background: var(--card-bg); border-right: 1px solid rgba(0,0,0,0.05);
+            padding: 40px; display: flex; flex-direction: column;
+        }
+
+        .main-content {
+            margin-left: 280px; padding: 40px 60px; width: calc(100% - 280px);
+        }
+
+        .menu-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px; color: var(--text-secondary);
+            text-decoration: none; border-radius: 16px;
+            margin-bottom: 8px; transition: all 0.2s; font-weight: 600;
+        }
+        .menu-item.active, .menu-item:hover {
+            background: rgba(193, 102, 107, 0.1); color: var(--accent-primary);
+        }
+
+        .stat-card {
+            background: var(--card-bg); padding: 32px; border-radius: 24px;
+            box-shadow: var(--shadow-soft); flex: 1; border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .stat-value { font-size: 36px; font-weight: 700; color: var(--text-main); font-family: 'Playfair Display', serif; }
+        .stat-label { font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 1px; font-weight: 700; }
+
+        .txn-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .txn-table th { text-align: left; padding: 20px; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; }
+        .txn-table td { padding: 20px; border-top: 1px solid rgba(0,0,0,0.05); color: var(--text-main); font-weight: 500; }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-success { background: rgba(72, 187, 120, 0.1); color: #48bb78; }
+
+        .dark-mode .sidebar { border-right-color: rgba(255,255,255,0.05); }
+        .dark-mode .txn-table td { border-top-color: rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <img src="/static/images/AcquireMock.svg" style="height: 20px; margin-bottom: 60px; opacity: 0.8;">
+
+        <a href="#" class="menu-item active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Дашборд
+        </a>
+        <a href="#" class="menu-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Транзакції
+        </a>
+        <a href="#" class="menu-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Налаштування
+        </a>
+    </div>
+
+    <div class="main-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+            <h1 class="title" style="margin:0;">Огляд</h1>
+            <div style="display:flex; gap:16px; align-items:center;">
+                <span style="color:var(--text-secondary); font-size:14px;">Feane Restaurant</span>
+                <div style="width:40px; height:40px; background:var(--accent-primary); border-radius:50%; color:white; display:flex; align-items:center; justify-content:center; font-weight:700;">F</div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:30px; margin-bottom:40px;">
+            <div class="stat-card">
+                <div class="stat-label">Загальний дохід</div>
+                <div class="stat-value">124,500 ₴</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Успішні транзакції</div>
+                <div class="stat-value">1,240</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Конверсія</div>
+                <div class="stat-value" style="color:#48bb78;">98.2%</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <h3 class="title" style="font-size:20px; margin-bottom:20px;">Останні транзакції</h3>
+            <table class="txn-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Референс</th>
+                        <th>Сума</th>
+                        <th>Метод</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-family:monospace; font-size:12px; color:var(--text-secondary);">tx_829310</td>
+                        <td>Order #10234</td>
+                        <td>450 ₴</td>
+                        <td>Visa •••• 4242</td>
+                        <td><span class="badge badge-success">Paid</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-family:monospace; font-size:12px; color:var(--text-secondary);">tx_829309</td>
+                        <td>Order #10233</td>
+                        <td>1,200 ₴</td>
+                        <td>Mastercard •••• 8899</td>
+                        <td><span class="badge badge-success">Paid</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-family:monospace; font-size:12px; color:var(--text-secondary);">tx_829308</td>
+                        <td>Order #10232</td>
+                        <td>85 ₴</td>
+                        <td>Apple Pay</td>
+                        <td><span class="badge badge-success">Paid</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+    </script>
+</body>
+</html>

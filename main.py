@@ -51,7 +51,7 @@ class VerifyCodeRequest(BaseModel):
 
 @app.on_event("startup")
 async def on_startup():
-    logger.info("Starting up application (v 1.0.1) and initializing database...")
+    logger.info("Starting up application and initializing database...")
     await init_db(engine)
     logger.info("Database initialized successfully.")
 
@@ -73,6 +73,14 @@ async def read_root(request: Request):
 @app.get("/test", response_class=HTMLResponse)
 async def test_page(request: Request):
     return templates.TemplateResponse("test.html", {"request": request})
+
+@app.get("/merchant/login", response_class=HTMLResponse)
+async def merchant_login(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/merchant/dashboard", response_class=HTMLResponse)
+async def merchant_dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc: HTTPException):
