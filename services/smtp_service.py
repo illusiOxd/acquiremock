@@ -3,29 +3,41 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
-import resend
+import httpx
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-resend.api_key = os.getenv('RESEND_API_KEY')
-RESEND_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', 'AcquireMock <onboarding@resend.dev>')
+BREVO_API_KEY = os.getenv('BREVO_API_KEY')
+BREVO_FROM_EMAIL = os.getenv('BREVO_FROM_EMAIL', 'noreply@acquiremock.com')
+BREVO_FROM_NAME = os.getenv('BREVO_FROM_NAME', 'AcquireMock')
 
 
 async def send_email(to_email, subject, html_content, text_content):
     logger.info(f"Preparing to send email to {to_email} with subject: {subject}")
 
     try:
-        params = {
-            "from": RESEND_FROM_EMAIL,
-            "to": [to_email],
-            "subject": subject,
-            "html": html_content,
-        }
-
-        email = resend.Emails.send(params)
-        logger.info(f"Email successfully sent to {to_email}. ID: {email.get('id')}")
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": BREVO_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "sender": {
+                        "name": BREVO_FROM_NAME,
+                        "email": BREVO_FROM_EMAIL
+                    },
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": html_content
+                },
+                timeout=10
+            )
+            response.raise_for_status()
+            logger.info(f"Email successfully sent to {to_email}")
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}. Error: {e}", exc_info=True)
 

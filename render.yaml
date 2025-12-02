@@ -15,8 +15,11 @@
       - key: WEBHOOK_SECRET
         generateValue: true
 
-      - key: RESEND_API_KEY
+      - key: BREVO_API_KEY
         sync: false
 
-      - key: RESEND_FROM_EMAIL
-        value: AcquireMock <onboarding@resend.dev>
+      - key: BREVO_FROM_EMAIL
+        value: noreply@acquiremock.com
+
+      - key: BREVO_FROM_NAME
+        value: AcquireMock
