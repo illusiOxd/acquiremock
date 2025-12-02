@@ -152,6 +152,7 @@ async def finalize_successful_payment(
     except Exception as e:
         logger.error(f"DB Error during finalization: {e}")
 
+    # Попытка отправить чек (не блокирует процесс, если упадет)
     if payment.otp_email:
         background_tasks.add_task(send_receipt_email, payment.otp_email, {
             "payment_id": payment.id,
@@ -226,6 +227,7 @@ async def create_invoice(invoice: CreateInvoiceRequest, db: AsyncSession = Depen
 
     await create_payment(db, payment)
 
+    # УБЕДИТЕСЬ, ЧТО ТУТ ПРАВИЛЬНЫЙ URL ВАШЕГО СЕРВИСА НА RENDER
     page_url = f"https://acquiremock-gateway.onrender.com/checkout/{payment_id}"
     logger.info(f"Invoice created: {payment_id}")
     return CreateInvoiceResponse(pageUrl=page_url)
@@ -296,8 +298,6 @@ async def process_payment(
             logger.info(f"Duplicate request detected with idempotency key {idempotency_key}")
             if existing.status == "paid":
                 return RedirectResponse(url=f"/success/{existing.id}", status_code=303)
-            elif existing.status == "waiting_for_otp":
-                return RedirectResponse(url=f"/otp/{existing.id}", status_code=303)
 
     logger.info(f"Processing payment {payment_id} for email {email}")
     payment = await get_payment(db, payment_id)
@@ -345,8 +345,8 @@ async def process_payment(
                     saved_card = SavedCard(
                         email=email,
                         card_token=str(uuid.uuid4()),
-                        card_hash=hash_sensitive_data(card_number_clean),
-                        cvv_hash=hash_sensitive_data(cvv),
+                        card_hash=hash_sensitive_data(card_number_clean[:72]),
+                        cvv_hash=hash_sensitive_data(cvv[:72]) if cvv else "",
                         expiry=expiry,
                         card_mask=card_mask_display,
                         psp_provider="mock"
@@ -355,21 +355,15 @@ async def process_payment(
                     await db.commit()
                     logger.info(f"Card saved for user {email}")
 
+    # ========================================================
+    # ИЗМЕНЕНИЕ: ПОЛНОСТЬЮ ПРОПУСКАЕМ OTP
+    # ========================================================
     if is_valid_card:
-        cookie_email = request.cookies.get("user_email")
-        if cookie_email and cookie_email == email:
-            logger.info(f"Cookie matched for {email}, skipping OTP")
-            await finalize_successful_payment(payment, db, background_tasks)
-            return RedirectResponse(url=f"/success/{payment_id}", status_code=303)
+        logger.info(f"Card valid for {email}. OTP Step SKIPPED due to SMTP issues.")
 
-        otp_code = generate_secure_otp()
-        payment.otp_code = otp_code
-        payment.status = "waiting_for_otp"
-        await update_payment(db, payment)
+        await finalize_successful_payment(payment, db, background_tasks)
 
-        background_tasks.add_task(send_otp_email, email, otp_code)
-        logger.info(f"OTP sent to {email}")
-        return RedirectResponse(url=f"/otp/{payment_id}", status_code=303)
+        return RedirectResponse(url=f"/success/{payment_id}", status_code=303)
     else:
         logger.warning(f"Insufficient funds or invalid card for payment {payment_id}")
         payment.status = "failed"
@@ -381,36 +375,11 @@ async def process_payment(
 
 @app.get("/otp/{payment_id}")
 async def otp_page(payment_id: str, request: Request, db: AsyncSession = Depends(get_db)):
-    payment = await get_payment(db, payment_id)
-
-    if not payment or payment.status != "waiting_for_otp":
-        raise HTTPException(400, "Invalid state")
-
-    return templates.TemplateResponse("otp-page.html",
-                                      {"request": request, "payment_id": payment_id, "email": payment.otp_email})
+    return RedirectResponse(url=f"/success/{payment_id}", status_code=303)
 
 
 @app.post("/otp/verify/{payment_id}")
-async def verify_otp(
-        request: Request,
-        payment_id: str,
-        background_tasks: BackgroundTasks,
-        otp_code: str = Form(...),
-        db: AsyncSession = Depends(get_db)
-):
-    logger.info(f"Verifying OTP for {payment_id}")
-    payment = await get_payment(db, payment_id)
-
-    if not payment:
-        raise PaymentNotFoundError(payment_id)
-
-    if not payment.otp_code or payment.otp_code != otp_code:
-        logger.warning(f"Invalid OTP for {payment_id}")
-        raise InvalidOTPError(payment_id)
-
-    payment.otp_code = None
-    await finalize_successful_payment(payment, db, background_tasks)
-
+async def verify_otp(request: Request, payment_id: str):
     return RedirectResponse(url=f"/success/{payment_id}", status_code=303)
 
 
