@@ -226,7 +226,7 @@ async def create_invoice(invoice: CreateInvoiceRequest, db: AsyncSession = Depen
 
     await create_payment(db, payment)
 
-    page_url = f"http://localhost:8002/checkout/{payment_id}"
+    page_url = f"https://acquiremock-gateway.onrender.com/checkout/{payment_id}"
     logger.info(f"Invoice created: {payment_id}")
     return CreateInvoiceResponse(pageUrl=page_url)
 
