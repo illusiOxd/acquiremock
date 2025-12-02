@@ -1,48 +1,31 @@
 ﻿import os
 import logging
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
-import aiosmtplib
+import resend
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-SMTP_HOST = os.getenv('SMTP_HOST')
-SMTP_PORT = os.getenv('SMTP_PORT')
-SMTP_USER = os.getenv('SMTP_USER')
-SMTP_PASS = os.getenv('SMTP_PASS')
+resend.api_key = os.getenv('RESEND_API_KEY')
+RESEND_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', 'AcquireMock <onboarding@resend.dev>')
 
 
 async def send_email(to_email, subject, html_content, text_content):
-    msg = MIMEMultipart("alternative")
-    msg['Subject'] = subject
-    msg['From'] = SMTP_USER
-    msg['To'] = to_email
-
-    part1 = MIMEText(text_content, "plain", "utf-8")
-    part2 = MIMEText(html_content, "html", "utf-8")
-
-    msg.attach(part1)
-    msg.attach(part2)
-
     logger.info(f"Preparing to send email to {to_email} with subject: {subject}")
 
     try:
-        await aiosmtplib.send(
-            msg,
-            hostname=SMTP_HOST,
-            port=int(SMTP_PORT),
-            username=SMTP_USER,
-            password=SMTP_PASS,
-            use_tls=False,
-            start_tls=True,
-            timeout=30
-        )
-        logger.info(f"Email successfully sent to {to_email}")
+        params = {
+            "from": RESEND_FROM_EMAIL,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content,
+        }
+
+        email = resend.Emails.send(params)
+        logger.info(f"Email successfully sent to {to_email}. ID: {email.get('id')}")
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}. Error: {e}", exc_info=True)
 

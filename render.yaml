@@ -14,11 +14,9 @@
 
       - key: WEBHOOK_SECRET
         generateValue: true
-      - key: SMTP_HOST
-        value: smtp.gmail.com
-      - key: SMTP_PORT
-        value: 587
-      - key: SMTP_USER
+
+      - key: RESEND_API_KEY
         sync: false
-      - key: SMTP_PASS
-        sync: false
+
+      - key: RESEND_FROM_EMAIL
+        value: AcquireMock <onboarding@resend.dev>
