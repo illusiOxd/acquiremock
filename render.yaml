@@ -2,6 +2,7 @@
   - type: web
     name: acquiremock-gateway
     env: python
+    plan: free
     buildCommand: "./build.sh"
     startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
@@ -21,4 +22,3 @@
         sync: false
       - key: SMTP_PASS
         sync: false
-
