@@ -1,0 +1,24 @@
+﻿services:
+  - type: web
+    name: acquiremock-gateway
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+      - key: DATABASE_URL
+        sync: false
+
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+
