@@ -47,12 +47,12 @@ Feature suggestions are welcome! Please create an issue with:
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/acquiremock.git
+git clone https://github.com/illusiOxd/acquiremock.git
 cd acquiremock
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
