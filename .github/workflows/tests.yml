@@ -2,7 +2,7 @@
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "dev-branch", "develop", "dev" ]
   pull_request:
     branches: [ "main", "master" ]
 
