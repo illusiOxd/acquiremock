@@ -8,8 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
+from app.core.limiter import limiter
+limiter.enabled = False
+
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["TESTING"] = "true"
+os.environ["WEBHOOK_SECRET"] = "test_secret_key_for_testing_purposes_12345678"
+os.environ["BASE_URL"] = "http://test"
 
 from app.main_test import app
 from app.database.core.session import get_db
@@ -25,6 +30,14 @@ TestSessionLocal = sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create event loop for the test session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture(scope="function")
@@ -51,15 +64,9 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",
-        timeout=5.0
+        timeout=10.0,
+        follow_redirects=False
     ) as c:
         yield c
 
     app.dependency_overrides.clear()
-
-
-def pytest_sessionfinish(session, exitstatus):
-    """Force exit after tests complete to prevent hanging."""
-    import sys
-    if exitstatus == 0:
-        sys.exit(0)

@@ -35,6 +35,14 @@
                 <span class="form-label" style="margin:0;" data-i18n="order_num">Референс</span>
                 <span style="font-family:'Playfair Display', serif; font-weight:600; color:var(--text-main);">#{{ reference }}</span>
             </div>
+
+            {% if card_mask %}
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                <span class="form-label" style="margin:0;">Карта</span>
+                <span style="font-family:'Playfair Display', serif; font-weight:600; color:var(--text-main);">{{ card_mask }}</span>
+            </div>
+            {% endif %}
+
             <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
                 <span class="form-label" style="margin:0;" data-i18n="sum_label">Сума</span>
                 <span style="font-family:'Playfair Display', serif; color:var(--accent-primary); font-weight:700;">{{ amount }} {{ currency_symbol }}</span>
