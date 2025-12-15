@@ -1,6 +1,6 @@
 ﻿import pytest
 from datetime import datetime
-from app.models.main_models import (
+from app.models. main_models import (
     Payment,
     PaymentStatus,
     SuccessfulOperation,
@@ -18,9 +18,9 @@ from app.models.errors import (
 
 
 def test_payment_status_values():
-    assert PaymentStatus. PENDING. value == "pending"
-    assert PaymentStatus.PAID.value == "paid"
-    assert PaymentStatus.FAILED. value == "failed"
+    assert PaymentStatus. PENDING.value == "pending"
+    assert PaymentStatus. PAID.value == "paid"
+    assert PaymentStatus.FAILED.value == "failed"
 
 
 def test_payment_error_base():
@@ -76,8 +76,8 @@ def test_successful_operation_model():
         card_mask="**** **** **** 1111",
         redirect_url="https://example.com/success"
     )
-    assert operation.payment_id == "pay_success"
-    assert operation.email == "test@example. com"
+    assert operation. payment_id == "pay_success"
+    assert operation.email == "test@example.com"
     assert operation.amount == 10000
 
 
@@ -90,7 +90,7 @@ def test_saved_card_model():
         expiry="12/25",
         card_mask="**** **** **** 4242"
     )
-    assert card.email == "user@example. com"
+    assert card.email == "user@example.com"
     assert card.psp_provider == "mock"
 
 
